@@ -106,6 +106,8 @@ bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 for o in list(bpy.context.scene.objects):
     if o != ob:
         bpy.data.objects.remove(o, do_unlink=True)
+# o Hunyuan3D entrega o modelo olhando para -X (apos importar o glTF); gira para olhar para -Y (frente)
+ob.data.transform(Matrix.Rotation(math.radians(90), 4, "Z"))
 log("importado:", len(ob.data.vertices), "vertices")
 
 # 1. escala

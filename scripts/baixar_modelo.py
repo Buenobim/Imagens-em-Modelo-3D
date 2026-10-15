@@ -17,13 +17,16 @@ VARIANTES = {
     # nome: (repo, subpasta do DiT)
     "turbo": ("tencent/Hunyuan3D-2", ["hunyuan3d-dit-v2-0-turbo", "hunyuan3d-vae-v2-0-turbo"]),
     "mini": ("tencent/Hunyuan3D-2mini", ["hunyuan3d-dit-v2-mini-turbo", "hunyuan3d-vae-v2-mini-turbo"]),
+    # 2.1: melhor modelo ABERTO (3,3 bi parametros). Pesos em .ckpt (inclui o VAE). ~7,4 GB
+    "v21": ("tencent/Hunyuan3D-2.1", ["hunyuan3d-dit-v2-1"]),
 }
+ARQUIVOS = {"v21": ("config.yaml", "model.fp16.ckpt")}
 
 def baixar(nome="turbo"):
     repo, subs = VARIANTES[nome]
     destino = os.path.join(MODELOS, repo)
     for sub in subs:       # DiT (forma) + VAE turbo (FlashVDM)
-        for arq in ("config.yaml", "model.fp16.safetensors"):
+        for arq in ARQUIVOS.get(nome, ("config.yaml", "model.fp16.safetensors")):
             caminho = hf_hub_download(repo_id=repo, filename=f"{sub}/{arq}", local_dir=destino)
             print("ok", caminho, round(os.path.getsize(caminho) / 1e9, 2), "GB")
 

@@ -11,9 +11,10 @@ Projeto irmão: [Impress-o3D_Carros](https://github.com/Buenobim/Impress-o3D_Car
 - **`app/plataforma.py`:** interface Gradio 5.
   - funções `gerar_tudo` e `refazer_impressao`, e a aba "Meus modelos";
   - cada trabalho vai para `trabalhos/<data>_<nome>/`.
-- **`app/gerador.py`:** carrega o Hunyuan3D-2 turbo **uma vez**.
-  - `HY3DGEN_MODELS` aponta para `modelos/`;
-  - qualidades: Rápida 5/256, Equilibrada 5/380, Detalhada 8/512 (passos/octree).
+- **`app/gerador.py`:** dois motores, **um carregado por vez** (os dois juntos não cabem em 8 GB).
+  - **2.1** (`vendor/Hunyuan3D-2.1/hy3dshape`, pelo `sys.path`): qualidade Alta 50/384 e Máxima 50/512 (passos/octree). Carrega na CPU, define `pipe.components = {conditioner, model, vae}` (o método herdado do diffusers espera isso), chama `enable_model_cpu_offload()` e depois `pipe.device = cuda`. Pico de 6,9 GB, ~3 min.
+  - **2.0 turbo** (`hy3dgen`, instalado com `pip -e`): Rápida 5/380, ~15 s.
+  - `HY3DGEN_MODELS` aponta para `modelos/`.
 - **`app/impressao.py`:** roda `blender/pos_processar.py` (subprocesso, `--python-exit-code 1`) e depois `impressao/fatiar_modelo.py`.
 - **`blender/pos_processar.py`:** recebe um JSON de parâmetros e faz:
   1. escala em mm;
@@ -37,12 +38,18 @@ Projeto irmão: [Impress-o3D_Carros](https://github.com/Buenobim/Impress-o3D_Car
 - Remova `hf-gradio` se aparecer.
 - Não atualize nada sem testar `scripts/teste_geracao.py` e a interface.
 
-**Modelo:**
-- Baixe só `config.yaml` + `model.fp16.safetensors` do DiT **e** do VAE turbo (`scripts/baixar_modelo.py`).
+**Modelos:**
+- Baixe só o necessário com `scripts/baixar_modelo.py`:
+  - `turbo`: DiT + VAE turbo em safetensors;
+  - `v21`: `hunyuan3d-dit-v2-1/model.fp16.ckpt`, que já inclui o VAE.
 - O carregador oficial baixaria a subpasta inteira, com o `.ckpt` duplicado.
+- O 2.1 precisa de `timm`.
+- O repositório do 2.1 tem dados de treino com nomes longos demais para o Windows: clone com sparse-checkout sem `hy3dshape/tools/` e sem `hy3dpaint/` (veja `instalar.ps1`).
+- Modelos fechados (2.5/3.0, os do site da Tencent) não estão disponíveis; o 2.1 é o melhor aberto.
+- O Hunyuan entrega o modelo olhando para −X. O `pos_processar.py` gira 90° em Z para a frente ficar em −Y (nomes das prévias).
 
 **Placa de 8 GB:**
-- Só geração de **forma**, com pico de ~6,6 GB. A textura (paint) pede 16 GB; não habilite.
+- Só geração de **forma**, com pico de ~6,9 GB no 2.1 (com descarga para a CPU). A textura (paint) pede mais memória; não habilite.
 - A geração usa um `Lock`; a fila do Gradio tem concorrência 1.
 
 **Blender:**
@@ -68,7 +75,7 @@ iniciar.bat                                                               # inte
 ```
 
 Teste de ponta a ponta sem clicar (com a plataforma aberta):
-`gradio_client.Client("http://127.0.0.1:7860/").predict(handle_file(img), nome, "Equilibrada", 1234, False, "Automático", 60, "Maior lado", 0.6, "Redondo", "1 · Vermelho", True, "Fina (0,12 mm)", api_name="/gerar_tudo")`
+`gradio_client.Client("http://127.0.0.1:7860/").predict(handle_file(img), nome, "Alta (≈3 min)", 1234, False, "Automático", 60, "Maior lado", 0.6, "Redondo", "1 · Vermelho", True, "Fina (0,12 mm)", api_name="/gerar_tudo")`
 
 ## Ideias para próximas versões
 

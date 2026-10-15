@@ -24,7 +24,7 @@ import gradio as gr
 import gerador
 import impressao
 
-AVISO_IA = "Modelo 3D gerado por IA (Hunyuan3D-2, Tencent) a partir de imagem."
+AVISO_IA = "Modelo 3D gerado por IA (Hunyuan3D, Tencent, modelo aberto) a partir de imagem."
 
 def _slug(txt):
     txt = re.sub(r"[^A-Za-z0-9_-]+", "_", (txt or "").strip())[:30].strip("_")
@@ -66,9 +66,9 @@ def gerar_tudo(img, nome, qualidade, semente, aleatoria, remover,
     pasta = os.path.join(TRABALHOS, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + _slug(nome))
     os.makedirs(pasta)
     img.save(os.path.join(pasta, "entrada.png"))
-    progress(0.05, desc="Carregando a IA (só demora na primeira vez)...")
-    gerador.carregar()
-    progress(0.25, desc="Criando o modelo 3D a partir da imagem...")
+    progress(0.05, desc="Carregando a IA (só demora na primeira vez ou ao trocar a qualidade)...")
+    gerador.carregar(gerador.QUALIDADES[qualidade][0])
+    progress(0.25, desc=f"Criando o modelo 3D a partir da imagem ({qualidade.split('(')[-1].rstrip(')')})...")
     usada, mesh = gerador.gerar(img, qualidade, semente, remover)
     usada.save(os.path.join(pasta, "sem_fundo.png"))
     glb = os.path.join(pasta, "ia.glb")
@@ -133,7 +133,8 @@ with gr.Blocks(title="Imagens em Modelo 3D", theme=gr.themes.Soft(primary_hue="r
                 img = gr.Image(label="Imagem", type="pil", image_mode="RGBA", sources=["upload", "clipboard"], height=300)
                 nome = gr.Textbox(label="Nome do modelo", placeholder="ex.: pinguim da Ana")
                 with gr.Accordion("Geração (IA)", open=True):
-                    qualidade = gr.Radio(list(gerador.QUALIDADES), value="Equilibrada", label="Qualidade")
+                    qualidade = gr.Radio(list(gerador.QUALIDADES), value=gerador.PADRAO, label="Qualidade",
+                                         info="Alta e Máxima usam o modelo Hunyuan3D-2.1 (melhor); Rápida usa o 2.0 (rascunho)")
                     remover = gr.Radio(["Automático", "Sim", "Não"], value="Automático", label="Remover o fundo da imagem")
                     with gr.Row():
                         semente = gr.Number(value=1234, precision=0, label="Semente (mesma semente = mesmo resultado)")

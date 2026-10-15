@@ -21,8 +21,9 @@ Mudou só o tamanho, a base ou a cor? Use **↻ Só refazer a impressão**, sem 
 ## Como funciona
 
 ```
-imagem ──► remoção de fundo ──► IA Hunyuan3D-2 (Tencent, modelo aberto) ──► malha 3D (GLB)
-                                          roda na placa de vídeo, ~10 s
+imagem ──► remoção de fundo ──► IA Hunyuan3D-2.1 (Tencent, melhor modelo ABERTO) ──► malha 3D (GLB)
+                                 ~3 min na placa de 8 GB (partes do modelo sobem da RAM sob demanda)
+                                 ou Hunyuan3D-2.0 turbo, ~15 s (rascunho)
 malha ──► Blender: escala em mm · malha refeita por voxel (sólido fechado) · redução de triângulos
           · base plana · pedestal opcional · VALIDAÇÃO do STL reaberto · prévias
 STL ──► Bambu Studio (linha de comando): perfis OFICIAIS da A1 mini · suporte em árvore
@@ -42,30 +43,35 @@ Do repositório [Impress-o3D_Carros](https://github.com/Buenobim/Impress-o3D_Car
 **Requisitos:**
 - Windows com placa **NVIDIA de 8 GB ou mais** (testado numa RTX 4070 Laptop);
 - Python 3.12, Git, **Blender 5.0** e **Bambu Studio 2.05**;
-- ~15 GB livres.
+- ~25 GB livres.
 
 ```powershell
 .\instalar.ps1
 ```
 
-O instalador:
+O instalador baixa ~18 GB (PyTorch e os modelos 2.1 e 2.0) e:
 1. cria o `.venv`;
 2. instala o PyTorch com CUDA 12.4;
-3. baixa o código oficial do Hunyuan3D-2 (na versão testada) para `vendor/`;
+3. baixa o código oficial do Hunyuan3D-2 e do 2.1 (nas versões testadas) para `vendor/`;
 4. instala as dependências nas versões testadas (`requirements.txt`);
-5. baixa **só** os arquivos necessários do modelo (~5,3 GB) para `modelos/`;
+5. baixa **só** os arquivos necessários dos modelos (~13 GB) para `modelos/`;
 6. gera os perfis da A1 mini.
 
 ## Medições (no computador de teste)
 
 Valores **medidos** na RTX 4070 Laptop (8 GB). Tempo e filamento são **estimativas** do Bambu Studio.
 
-| Etapa | Tempo |
-|---|---|
-| Carregar a IA (1ª vez) | ~80 s |
-| Gerar a malha (qualidade Equilibrada) | ~10 s, pico de 6,6 GB de vídeo |
-| Preparar no Blender + fatiar | ~25 a 60 s |
-| Exemplo: pinguim de 80 mm com suporte | 1h10 de impressão, ~24 g (estimativa) |
+| Qualidade | Modelo | Tempo para gerar | Pico de vídeo |
+|---|---|---|---|
+| **Alta** (padrão) | Hunyuan3D-2.1, 50 passos, grade 384 | ~3 min | 6,9 GB |
+| **Máxima** | Hunyuan3D-2.1, 50 passos, grade 512 | ~5 a 6 min | 6,9 GB |
+| **Rápida** (rascunho) | Hunyuan3D-2.0 turbo, 5 passos | ~15 s | 6,6 GB |
+
+- Carregar o modelo: ~1 min. Acontece na abertura e ao trocar entre "Rápida" e "Alta/Máxima", porque só cabe um modelo por vez.
+- Preparar no Blender e fatiar: ~25 a 60 s.
+- Exemplo: Homer de 81 mm com pedestal e suporte, ~1h04 de impressão e ~14 g (estimativa).
+
+**Por que o 2.1:** no teste com o Homer, o 2.1 chegou perto do resultado do site da Tencent (que usa o 3.0, fechado). Ficaram certos a pose frontal, a boca aberta com dentes, as orelhas, a gola, as mangas, as mãos, a barra da calça e os sapatos. O 2.0 fazia uma "massa" sem definição. O que ainda perde para o 3.0: fios de cabelo finos e o desenho dos olhos.
 
 ## Limitações
 
@@ -77,7 +83,7 @@ Valores **medidos** na RTX 4070 Laptop (8 GB). Tempo e filamento são **estimati
 
 ## Licença do modelo de IA
 
-O Hunyuan3D-2 (código e pesos) é da Tencent, sob a **Tencent Hunyuan 3D 2.0 Community License** ([texto](https://github.com/Tencent-Hunyuan/Hunyuan3D-2/blob/main/LICENSE)). Este repositório **não redistribui** o código nem os pesos: o instalador baixa os dois da fonte oficial.
+O Hunyuan3D-2 e o 2.1 (código e pesos) são da Tencent, sob as licenças **Tencent Hunyuan 3D 2.0 / 2.1 Community License** ([texto](https://github.com/Tencent-Hunyuan/Hunyuan3D-2/blob/main/LICENSE)). Este repositório **não redistribui** o código nem os pesos: o instalador baixa os dois da fonte oficial.
 
 Pontos principais da licença:
 - vale fora da União Europeia, do Reino Unido e da Coreia do Sul;
@@ -91,7 +97,7 @@ Pontos principais da licença:
 iniciar.bat              abre a plataforma
 instalar.ps1             instala tudo do zero
 app/plataforma.py        interface web (Gradio, em português)
-app/gerador.py           IA: imagem -> malha (Hunyuan3D-2 turbo)
+app/gerador.py           IA: imagem -> malha (Hunyuan3D-2.1 ou 2.0 turbo)
 app/impressao.py         chama o Blender e o fatiador
 app/stl_util.py          leitura/escrita/validação de STL
 blender/pos_processar.py malha da IA -> peça imprimível + prévias
