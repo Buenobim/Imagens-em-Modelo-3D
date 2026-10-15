@@ -1,0 +1,10 @@
+.venv/
+vendor/
+modelos/
+trabalhos/
+__pycache__/
+*.blend1
+*.gcode
+*.tmp
+exemplos/*_3d.glb
+exemplos/demo_tencent.png

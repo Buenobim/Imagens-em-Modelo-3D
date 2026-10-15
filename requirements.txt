@@ -1,0 +1,22 @@
+# Versoes TESTADAS juntas (15/10/2026). O PyTorch e instalado a parte, com CUDA 12.4 (ver instalar.ps1):
+#   torch==2.6.0+cu124  torchvision==0.21.0+cu124
+# ATENCAO: transformers 5.x renomeia camadas do DINOv2 e quebra os pesos do Hunyuan3D-2 -> manter <5.
+# transformers 4.x exige huggingface_hub <1.0 -> por isso diffusers <0.36 e gradio 5.x.
+transformers==4.57.6
+huggingface_hub==0.36.2
+diffusers==0.35.2
+gradio==5.50.0
+gradio_client==1.14.0
+rembg==2.0.69
+pillow==11.3.0
+onnxruntime==1.31.0
+accelerate==1.15.0
+einops==0.8.2
+omegaconf==2.4.0
+opencv-python==5.0.0.93
+numpy==2.5.2
+trimesh==5.1.1
+pymeshlab==2025.7.post1
+pygltflib==1.16.5
+xatlas==0.0.11
+safetensors==0.8.0
