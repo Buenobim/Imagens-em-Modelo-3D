@@ -69,18 +69,21 @@ def gerar_tudo(img, nome, qualidade, semente, aleatoria, remover,
     progress(0.05, desc="Carregando a IA (só demora na primeira vez ou ao trocar a qualidade)...")
     gerador.carregar(gerador.QUALIDADES[qualidade][0])
     progress(0.25, desc=f"Criando o modelo 3D a partir da imagem ({qualidade.split('(')[-1].rstrip(')')})...")
-    usada, mesh = gerador.gerar(img, qualidade, semente, remover)
+    usada, mesh, nota = gerador.gerar(img, qualidade, semente, remover,
+                                      aviso=lambda m: progress(0.4, desc=m))
     usada.save(os.path.join(pasta, "sem_fundo.png"))
     glb = os.path.join(pasta, "ia.glb")
     mesh.export(glb)
-    json.dump(dict(nome=nome, qualidade=qualidade, semente=int(semente), remover_fundo=remover),
+    json.dump(dict(nome=nome, qualidade=qualidade, semente=int(semente), remover_fundo=remover, nota=nota,
+                   motor=gerador.ultimo_motor),
               open(os.path.join(pasta, "geracao.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     progress(0.55, desc="Preparando para impressão (Blender + Bambu Studio)...")
     try:
         info, fat = impressao.preparar(pasta, glb, tamanho, medida, corte, pedestal, cor, suporte, camada)
     except Exception as e:
         raise gr.Error(f"O modelo 3D foi criado, mas a preparação para impressão falhou: {e}"[:600])
-    return (usada, glb, _previas(pasta), _arquivos(pasta), _resumo(info, fat), pasta,
+    resumo = (f"**{nota}**\n\n" if nota else "") + _resumo(info, fat)
+    return (usada, glb, _previas(pasta), _arquivos(pasta), resumo, pasta,
             gr.update(value=int(semente)))
 
 def refazer_impressao(pasta, tamanho, medida, corte, pedestal, cor, suporte, camada, progress=gr.Progress()):

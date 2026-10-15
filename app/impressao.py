@@ -22,9 +22,16 @@ PEDESTAIS = {"Sem pedestal": "nenhum", "Redondo": "redondo", "Retangular": "reta
 def preparar(pasta, glb, tamanho_mm, medida, corte_base_mm, pedestal, cor, suporte, camada):
     """roda o Blender e o fatiador; devolve (info_impressao, info_fatiamento)"""
     slot, rgb = CORES[cor]
+    # orientacao de saida da IA: o 2.1 entrega olhando para -X (gira 90 graus); o 2.0, para -Y
+    motor = "v21"
+    try:
+        motor = json.load(open(os.path.join(pasta, "geracao.json"), encoding="utf-8")).get("motor") or "v21"
+    except Exception:
+        pass
     params = dict(entrada=glb, saida_dir=pasta, nome="modelo", tamanho_mm=float(tamanho_mm),
                   medida="altura" if medida.startswith("Altura") else "maior",
-                  corte_base_mm=float(corte_base_mm), pedestal=PEDESTAIS[pedestal], cor_rgb=list(rgb))
+                  corte_base_mm=float(corte_base_mm), pedestal=PEDESTAIS[pedestal], cor_rgb=list(rgb),
+                  girar_graus=90 if motor == "v21" else 0)
     pj = os.path.join(pasta, "parametros_impressao.json")
     json.dump(params, open(pj, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     r = subprocess.run([BLENDER, "-b", "--factory-startup", "--python-exit-code", "1",

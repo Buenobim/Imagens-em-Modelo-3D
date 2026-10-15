@@ -106,8 +106,9 @@ bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 for o in list(bpy.context.scene.objects):
     if o != ob:
         bpy.data.objects.remove(o, do_unlink=True)
-# o Hunyuan3D entrega o modelo olhando para -X (apos importar o glTF); gira para olhar para -Y (frente)
-ob.data.transform(Matrix.Rotation(math.radians(90), 4, "Z"))
+# o Hunyuan3D-2.1 entrega o modelo olhando para -X (apos importar o glTF); o 2.0, para -Y.
+# gira para a frente ficar em -Y (nomes das previas)
+ob.data.transform(Matrix.Rotation(math.radians(float(P.get("girar_graus", 90))), 4, "Z"))
 log("importado:", len(ob.data.vertices), "vertices")
 
 # 1. escala
@@ -120,6 +121,20 @@ lo, hi = co.min(0), co.max(0)
 ob.data.transform(Matrix.Translation((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2])))
 dims = hi - lo
 log("escala:", round(s, 4), "-> dimensoes", np.round(dims, 1))
+
+# 1b. fecha furos ANTES do voxel: a malha da IA pode vir aberta (ex.: partes que encostam no limite
+#     da area de geracao). O voxel so preenche volumes fechados; aberta, a peca quase some.
+bm = bmesh.new()
+bm.from_mesh(ob.data)
+bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)
+borda = [e for e in bm.edges if e.is_boundary]
+if borda:
+    novas = bmesh.ops.holes_fill(bm, edges=borda, sides=0)["faces"]
+    bmesh.ops.triangulate(bm, faces=novas)
+    log("furos fechados:", len(novas), "(arestas de borda:", len(borda), ")")
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+bm.to_mesh(ob.data)
+bm.free()
 
 # 2. remalha por voxel
 voxel = float(P.get("voxel_mm") or max(0.12, float(max(dims)) / 500.0))

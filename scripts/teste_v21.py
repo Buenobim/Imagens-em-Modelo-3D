@@ -17,7 +17,8 @@ passos = int(sys.argv[3]) if len(sys.argv) > 3 else 50
 octree = int(sys.argv[4]) if len(sys.argv) > 4 else 384
 
 t0 = time.time()
-pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained("tencent/Hunyuan3D-2.1", device="cpu")
+DT = torch.bfloat16 if os.environ.get("DTYPE") == "bf16" else torch.float16
+pipe = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained("tencent/Hunyuan3D-2.1", device="cpu", dtype=DT)
 # o metodo copiado do diffusers espera 'components'; a sequencia ja vem definida (conditioner->model->vae)
 pipe.components = {"conditioner": pipe.conditioner, "model": pipe.model, "vae": pipe.vae}
 pipe.enable_model_cpu_offload()
@@ -28,7 +29,7 @@ img = Image.open(img_path).convert("RGBA")
 torch.cuda.reset_peak_memory_stats()
 t1 = time.time()
 mesh = pipe(image=img, num_inference_steps=passos, octree_resolution=octree, num_chunks=8000,
-            guidance_scale=5.0, generator=torch.manual_seed(1234), output_type="trimesh")[0]
+            guidance_scale=float(os.environ.get("GUIDANCE", "5.0")), generator=torch.manual_seed(int(os.environ.get("SEMENTE", "1234"))), output_type="trimesh")[0]
 print(f"[v21] {passos} passos, octree {octree}: {time.time() - t1:.0f}s | {len(mesh.faces)} faces | "
       f"pico VRAM {torch.cuda.max_memory_allocated() / 1e9:.2f} GB", flush=True)
 mesh.export(out)

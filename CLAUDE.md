@@ -52,6 +52,15 @@ Projeto irmão: [Impress-o3D_Carros](https://github.com/Buenobim/Impress-o3D_Car
 - Só geração de **forma**, com pico de ~6,9 GB no 2.1 (com descarga para a CPU). A textura (paint) pede mais memória; não habilite.
 - A geração usa um `Lock`; a fila do Gradio tem concorrência 1.
 
+**Falhas da IA e recuperação automática (`gerador.falhou`):**
+- O 2.1 às vezes devolve uma "laje" ou um "cartão chapado" em vez do objeto. Foi assim com o Cebolinha, em 4 de 4 sementes, inclusive em bf16; com o Homer funcionou.
+- **Detecção:** proporção da silhueta frontal da malha (largura z / altura y, coordenadas glTF) contra a proporção do objeto na imagem (fator até 2). Validado em 7 casos (3 bons, 4 ruins).
+- **Ordem das tentativas:** 2.1 → 2.0 (8 passos/512) → 2.0 com outra semente. O resumo da interface avisa quando houve recuperação.
+- **Malha aberta:** a da IA pode vir aberta (encosta no limite da área de geração). O `pos_processar` fecha os furos (`holes_fill`) ANTES do voxel; sem isso o voxel descarta quase tudo.
+- **Partes soltas** com menos de 5% da maior são descartadas (orelhas ou pedaços flutuando).
+- **Orientação:** o 2.1 sai olhando para −X (gira 90°); o 2.0 sai olhando para −Y (0°). O motor fica em `geracao.json` → `girar_graus`.
+- **Testes manuais com a plataforma aberta:** ela segura memória da placa e o teste fica 7x mais lento (sem erro). Feche a plataforma antes de rodar `scripts/teste_*.py`.
+
 **Blender:**
 - Caminhos **absolutos** no script: caminho relativo de render/import resolve em outro lugar.
 - Sempre com `--python-exit-code 1`.
